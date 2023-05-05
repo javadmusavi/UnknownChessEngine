@@ -20,9 +20,9 @@ class ChessBoard:
             for j in range(8):
                 square = i * 8 + j
                 if square in self.board:
-                    board_str += self.board[square].symbol
+                    board_str += str(self.board[square])
                 else:
-                    board_str += '.'
+                    board_str += '. '
                 board_str += ' '
             board_str += '\n'
         return board_str
@@ -40,3 +40,25 @@ class ChessBoard:
             self.black_pieces |= (1 << end_sq)
 
         self.piece_counts[piece.symbol] -= 1
+
+
+class Piece:
+    """Class representing a chess piece."""
+
+    def __init__(self, piece_type, color):
+        self.piece_type = piece_type  # 'K', 'Q', 'R', 'B', 'N', or 'P'
+        self.color = color  # 'w' for white, 'b' for black
+        self.has_moved = False  # Whether the piece has moved yet in the game
+
+    def __str__(self):
+        """Return the string representation of the piece."""
+        return self.color + self.piece_type
+
+    def generate_moves(self, board, x, y):
+        """Generate all possible moves for the piece at position (x, y) on the board."""
+        # TODO: Implement this function
+
+
+board = ChessBoard()
+print(board)
+board.move_piece()
