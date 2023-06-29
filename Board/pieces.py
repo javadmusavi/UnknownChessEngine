@@ -5,12 +5,41 @@ class Piece:
         self.color = color  # 'w' for white, 'b' for black
         self.has_moved = False  # Whether the piece has moved yet in the game
 
-    def get_valid_moves(self, board, start_rank_idx, start_file_idx):
-        """
-        Returns a list of valid moves for the piece at the given position on the board.
-        """
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
         raise NotImplementedError("Subclasses should implement this method")
 
+    def get_valid_moves(self):
+        raise NotImplementedError("Subclasses should implement this method")
+
+    def remove_check_position(self, valid_moves, board, start_rank_idx, start_file_idx):
+        removed_moves = ''
+        i = 0
+        list_top = len(valid_moves)
+        while i < list_top:
+            board.simulate_move_piece((start_rank_idx, start_file_idx), valid_moves[i])
+            if board.is_check(self.color):
+                valid_moves.remove(valid_moves[i])
+                list_top -=1
+                i -=1
+
+            board.undo_move()
+            i+=1
+
+
+        # for i  in list_top:
+        #     print(board.simulate_move_piece((start_rank_idx, start_file_idx), valid_moves[i]))
+        #     print(board)
+        #     print(valid_moves[i])
+        #     if board.is_check(self.color):
+        #         removed_moves += str(valid_moves[i])
+        #         valid_moves.remove(valid_moves[i])
+        #         i-=1
+        #         list_top -=1
+        #
+        #     board.undo_move()
+
+        print('removed moves: ', removed_moves)
+        return valid_moves
 
 class King(Piece):
     def __init__(self, color):
@@ -30,25 +59,30 @@ class King(Piece):
                 end_piece = board.get_piece(end_rank_idx, end_file_idx)
                 if end_piece is None or end_piece.color != self.color:
                     valid_moves.append((end_rank_idx, end_file_idx))
+
         return valid_moves
 
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
+
     def __str__(self):
-        return f'{self.color}K'
+        return f'{self.color}_King'
 
 
 class Pawn(Piece):
     def __init__(self, color):
         super().__init__(color)
 
-    def get_valid_moves(self, board, start_rank_idx, start_file_idx):
+    def get_valid_moves(self, board, start_rank_idx,start_file_idx):
         valid_moves = []
         # Check if pawn can move one or two squares up
         if self.color == 'w':
-            print('here')
             if start_rank_idx == 6:
                 if board.get_piece(start_rank_idx - 1, start_file_idx) is None and board.get_piece(start_rank_idx - 2,
                                                                                                    start_file_idx) is None:
-                    valid_moves.extend([(start_rank_idx-1, start_file_idx), (start_rank_idx - 2, start_file_idx)])
+                    valid_moves.extend([(start_rank_idx - 1, start_file_idx), (start_rank_idx - 2, start_file_idx)])
             elif start_rank_idx > 0 and board.get_piece(start_rank_idx - 1, start_file_idx) is None:
                 valid_moves.append((start_rank_idx - 1, start_file_idx))
 
@@ -56,30 +90,24 @@ class Pawn(Piece):
             for dr, df in [(-1, 1), (-1, -1)]:
                 end_rank_idx = start_rank_idx + dr
                 end_file_idx = start_file_idx + df
-                print()
                 if end_rank_idx < 0 or end_rank_idx >= 8 or end_file_idx < 0 or end_file_idx >= 8:
-                    print('here')
                     continue  # End square is off the board
                 end_piece = board.get_piece(end_rank_idx, end_file_idx)
-                print(end_rank_idx, end_file_idx)
                 if end_piece is not None and end_piece.color != self.color:
-                    print('here')
                     valid_moves.append((end_rank_idx, end_file_idx))
 
         elif self.color == 'b':
             if start_rank_idx == 1:
                 if board.get_piece(start_rank_idx + 1, start_file_idx) is None and board.get_piece(start_rank_idx + 2,
                                                                                                    start_file_idx) is None:
-                    valid_moves.extend([(start_rank_idx+1, start_file_idx), (start_rank_idx + 2, start_file_idx)])
+                    valid_moves.extend([(start_rank_idx + 1, start_file_idx), (start_rank_idx + 2, start_file_idx)])
             if start_rank_idx < 7 and board.get_piece(start_rank_idx + 1, start_file_idx) is None:
-                valid_moves.append((start_rank_idx + 1, start_file_idx))\
-
+                valid_moves.append((start_rank_idx + 1, start_file_idx))
             # Check if pawn can capture diagonally
             for dr, df in [(1, 1), (1, -1)]:
                 end_rank_idx = start_rank_idx + dr
                 end_file_idx = start_file_idx + df
                 if end_rank_idx < 0 or end_rank_idx >= 8 or end_file_idx < 0 or end_file_idx >= 8:
-
                     continue  # End square is off the board
                 end_piece = board.get_piece(end_rank_idx, end_file_idx)
                 if end_piece is not None and end_piece.color != self.color:
@@ -87,8 +115,13 @@ class Pawn(Piece):
 
         return valid_moves
 
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
+
     def __str__(self):
-        return f'{self.color}P'
+        return f'{self.color}_Pawn'
 
 
 class Rook(Piece):
@@ -129,8 +162,13 @@ class Rook(Piece):
 
         return valid_moves
 
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
+
     def __str__(self):
-        return f'{self.color}R'
+        return f'{self.color}_Rook'
 
 
 class Bishop(Piece):
@@ -158,15 +196,20 @@ class Bishop(Piece):
 
         return valid_moves
 
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
+
     def __str__(self):
-        return f'{self.color}B'
+        return f'{self.color}_Bishop'
 
 
 class Queen(Piece):
     def __init__(self, color):
         super().__init__(color)
 
-    def get_valid_moves(self, board, start_rank_idx, start_file_idx):
+    def get_valid_moves(self,board, start_rank_idx, start_file_idx):
         valid_moves = []
 
         # Check horizontal squares
@@ -214,11 +257,14 @@ class Queen(Piece):
                     break
                 end_rank_idx += dr
                 end_file_idx += df
-
         return valid_moves
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
 
     def __str__(self):
-        return f'{self.color}Q'
+        return f'{self.color}_Queen'
 
 
 class Knight(Piece):
@@ -238,6 +284,10 @@ class Knight(Piece):
                     valid_moves.append((end_rank_idx, end_file_idx))
 
         return valid_moves
+    def get_valid_moves_with_check(self, board, start_rank_idx, start_file_idx):
+        valid_moves = self.get_valid_moves(board, start_rank_idx, start_file_idx)
+        print('first valid moves: ', valid_moves)
+        return super().remove_check_position(valid_moves, board, start_rank_idx, start_file_idx)
 
     def __str__(self):
-        return f'{self.color}N'
+        return f'{self.color}_Knight'

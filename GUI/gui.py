@@ -49,10 +49,9 @@ class GUI:
         if self.selected_piece is None:
             if piece is not None:
                 self.selected_piece = (row, col)
-                self.valid_moves = piece.get_valid_moves(self.board, row, col)
+                self.valid_moves = piece.get_valid_moves_with_check(self.board, row, col)
         else:
             if (row, col) in self.valid_moves:
-                print(self.selected_piece[0], self.selected_piece[1])
                 self.board.move_piece(self.selected_piece[0] * 10 + self.selected_piece[1], row * 10 + col)
                 self.selected_piece = None
                 self.valid_moves = []
